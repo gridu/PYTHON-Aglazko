@@ -8,7 +8,7 @@ class AnimalCenter(db.Model):
     login = db.Column(db.String(20))
     password_hash = db.Column(db.String(256))
     address = db.Column(db.String(200))
-    animals = db.relationship("Animal", backref="animals")
+    # animals = db.relationship("Animal", backref="animals")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -16,11 +16,15 @@ class AnimalCenter(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    def to_dict(self):
-        return {'id': self.id,
+    def to_dict(self, long=False):
+        data = {'id': self.id,
                 'login': self.login,
-                'address': self.address,
-                'animals': self.animals}
+
+                # 'animals': self.animals
+        }
+        if long:
+            data.update({'address': self.address})
+        return data
 
 
 class AccessRequest(db.Model):
@@ -55,6 +59,7 @@ class Animal(db.Model):
                 'price': self.price
             })
         return data
+
 
 class Species(db.Model):
     id = db.Column(db.Integer, primary_key=True)

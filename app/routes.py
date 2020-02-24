@@ -3,15 +3,18 @@ from flask import request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity
 
 
-@app.after_request
-def log_request(response):
-    if request.method in ['POST', 'PUT', 'DELETE'] and response.status_code < 300:
-        logger.info(
-            '%s url=%s center_id=%s entity=%s entity_id=%s',
-            request.method, request.url, get_jwt_identity(),
-            request.base_url.split('/')[-1], response.json['id']
-        )
-    return response
+# @app.after_request
+# def log_request(response):
+#     if request.method in ['POST', 'PUT', 'DELETE'] and response.status_code < 300:
+#         logger.info(
+#             '%s url=%s center_id=%s entity=%s entity_id=%s',
+#             request.method, request.url, get_jwt_identity(),
+#             request.base_url.split('/')[-1], response.json['id']
+#         )
+#     return response
+def log_request(method, request_url, center_id, entity_type, entity_id):
+    logger.info('method {} request_url {} center_id {} entity_type {} entity_id {}', method, request_url, center_id,
+                entity_type, entity_id)
 
 
 @app.route('/')
@@ -56,6 +59,7 @@ def animals():
                                species_id=data['species_id'], age=data['age'])
         db.session.add(animal)
         db.session.commit()
+        log_request(request.method, request.url, user_id, 'animal', animal.id)
         return jsonify(animal.to_dict()), 201
 
 
@@ -81,13 +85,16 @@ def animal_inform(id):
 
 @app.route('/centers', methods=['GET'])
 def centers_list():
-    centers = models.AnimalCenter.query.all()
-    return jsonify([center.to_dict() for center in centers])
+    # centers = models.AnimalCenter.query.all()
+    return jsonify([center.to_dict() for center in models.AnimalCenter.query.all()])
 
 
 @app.route('/centers/<int:id>', methods=['GET'])
-def center_inform():
-    pass
+def center_inform(id):
+    center = models.AnimalCenter.query.get(id)
+    if not center:
+        return jsonify(message='Not found'), 404
+    return jsonify(center.to_dict(long=True))
 
 
 @app.route('/species', methods=['GET', 'POST'])
@@ -114,8 +121,12 @@ def species():
 
 
 @app.route('/species/<int:id>', methods=['GET'])
-def specie_inform():
-    pass
+def specie_inform(id):
+    species = models.Species.query.get(id)
+    animals = models.Animal.query.filter_by(species_id=id).all()
+    if not species:
+        return jsonify('Not found'), 404
+    return jsonify(species.to_dict(), [animal.to_dict() for animal in animals])
 
 
 @app.route('/register', methods=['POST'])

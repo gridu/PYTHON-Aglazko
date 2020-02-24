@@ -16,9 +16,9 @@ jwt = JWTManager(app)
 
 FORMAT = '%(asctime)s %(message)s'
 fh = logging.FileHandler('app.log')
-logging.basicConfig(format=FORMAT)
+logging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p')
 logger = logging.getLogger(__name__)
 logger.addHandler(fh)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 from app import routes, models
