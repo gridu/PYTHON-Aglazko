@@ -1,19 +1,11 @@
 from app import app, models, db, utils, schemas, logger
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity
+import logging
 
 
-# @app.after_request
-# def log_request(response):
-#     if request.method in ['POST', 'PUT', 'DELETE'] and response.status_code < 300:
-#         logger.info(
-#             '%s url=%s center_id=%s entity=%s entity_id=%s',
-#             request.method, request.url, get_jwt_identity(),
-#             request.base_url.split('/')[-1], response.json['id']
-#         )
-#     return response
 def log_request(method, request_url, center_id, entity_type, entity_id):
-    logger.info('method {} request_url {} center_id {} entity_type {} entity_id {}', method, request_url, center_id,
+    logger.info('method %s - request_url %s - center_id %s - entity_type %s - entity_id %s', method, request_url, center_id,
                 entity_type, entity_id)
 
 
@@ -60,6 +52,13 @@ def animals():
         db.session.add(animal)
         db.session.commit()
         log_request(request.method, request.url, user_id, 'animal', animal.id)
+        # logger = logging.getLogger("")
+        # f_handler = logging.FileHandler('app.log')
+        # f_handler.setLevel(logging.INFO)
+        # f_format = logging.Formatter('%(asctime)s - %(message)s')
+        # f_handler.setFormatter(f_format)
+        # logger.addHandler(f_handler)
+        # logger.info('method %s request_url %s center_id %s entity_type %s entity_id %s', request.method, request.url, user_id, 'animal', animal.id)
         return jsonify(animal.to_dict()), 201
 
 
@@ -75,11 +74,15 @@ def animal_inform(id):
         if request.method == 'DELETE':
             db.session.delete(animal)
             db.session.commit()
+            user_id = get_jwt_identity()
+            log_request(request.method, request.url, user_id, 'animal', animal.id)
             return jsonify({'id': id})
         data = request.get_json()
         for key, value in data.items():
             setattr(animal, key, value)
         db.session.commit()
+        user_id = get_jwt_identity()
+        log_request(request.method, request.url, user_id, 'animal', animal.id)
         return jsonify(animal.to_dict(long=True))
 
 
@@ -117,6 +120,8 @@ def species():
                                 price=data['price'])
         db.session.add(specie)
         db.session.commit()
+        user_id = get_jwt_identity()
+        log_request(request.method, request.url, user_id, 'species', specie.id)
         return jsonify(specie.to_dict()), 201
 
 
