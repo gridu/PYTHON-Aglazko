@@ -23,14 +23,5 @@ logger = logging.getLogger(__name__)
 logger.addHandler(fh)
 logger.setLevel(logging.INFO)
 
-# logger = logging.getLogger("")
-
-
-
-
-# def log_request(method, request_url, center_id, entity_type, entity_id):
-#     logger.info('method %s request_url %s center_id %s entity_type %s entity_id %s', method, request_url, center_id,
-#                 entity_type, entity_id)
-
 
 from app import routes, models

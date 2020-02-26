@@ -1,10 +1,19 @@
+"""Module which contains functions for each route."""
 from app import app, models, db, utils, schemas, logger
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity
-import logging
 
 
 def log_request(method, request_url, center_id, entity_type, entity_id):
+    """
+    Function that add information to log file.
+    :param method: request method.
+    :param request_url: request url.
+    :param center_id: id of user that send request.
+    :param entity_type: type of entity that user add or change.
+    :param entity_id:
+    :return:
+    """
     logger.info('method %s - request_url %s - center_id %s - entity_type %s - entity_id %s', method, request_url, center_id,
                 entity_type, entity_id)
 
@@ -147,6 +156,8 @@ def registration():
     access_request = models.AccessRequest(center_id=center.id)
     db.session.add(access_request)
     db.session.commit()
+
+    log_request(request.method, request.url, center.id, 'animal_center', center.id)
 
     access_token = create_access_token(identity=center.id)
     return jsonify(message="Successfully registered", access_token=access_token), 201
