@@ -1,7 +1,9 @@
 """Module which contains functions for each route."""
-from app import app, models, db, utils, schemas, logger
-from flask import request, jsonify
+from app import models, db, utils, schemas, logger, dao
+from flask import request, jsonify, Blueprint
 from flask_jwt_extended import create_access_token, get_jwt_identity
+
+bp = Blueprint("app", __name__)
 
 
 def log_request(method, request_url, center_id, entity_type, entity_id):
@@ -18,12 +20,12 @@ def log_request(method, request_url, center_id, entity_type, entity_id):
                 entity_type, entity_id)
 
 
-@app.route('/')
+@bp.route('/')
 def index():
     return "Hello"
 
 
-@app.route('/login', methods=['GET'])
+@bp.route('/login', methods=['GET'])
 def login():
     """
     Function for authorization.
@@ -34,28 +36,23 @@ def login():
     user_password = request.args.get('password')
     if not user_login or not user_password:
         return jsonify(message="Login and password are required"), 400
-    user = models.AnimalCenter.query.filter_by(login=user_login).first()
+    user = dao.AnimalCentersDAO.get_center_by_login(user_login)
     if not user:
         return jsonify(message="No user with such login"), 400
+    dao.AccessRequestDAO.create_access_request(user['id'])
 
-    access_request = models.AccessRequest(center_id=user.id)
-    db.session.add(access_request)
-    db.session.commit()
-
-    if not user.check_password(user_password):
+    if not dao.AnimalCentersDAO.check_password(user['id'], user_password):
         return jsonify(message="Incorrect password"), 400
-    access_token = create_access_token(identity=user.id)
-    return jsonify(access_token=access_token)
+    access_token = create_access_token(identity=user['id'])
+    return jsonify({'access_token': access_token})
 
 
-@app.route('/animals', methods=['GET', 'POST'])
+@bp.route('/animals', methods=['GET', 'POST'])
 @utils.jwt_required_for_change
 @utils.json_validate_for_change(schemas.animal_schema)
 def animals():
     if request.method == 'GET':
-        # animals = db.engine.execute('SELECT * from animals')
-        # animals = [animal.to_dict() for animal in db.engine.execute('SELECT * from animals')]
-        return jsonify(animals)
+        return jsonify(dao.AnimalsDAO.get_animals())
     else:
         data = request.get_json()
         user_id = get_jwt_identity()
@@ -70,7 +67,7 @@ def animals():
         return jsonify(animal.to_dict()), 201
 
 
-@app.route('/animals/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+@bp.route('/animals/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 @utils.jwt_required_for_change
 @utils.json_validate_for_change(schemas.animal_update_schema)
 def animal_inform(id):
@@ -82,49 +79,47 @@ def animal_inform(id):
              If request method DELETE function will return id of animal that was deleted.
              If request method PUT function will change param that give user and return detailed information about animal.
     """
-    animal = models.Animal.query.get(id)
+    animal = dao.AnimalsDAO.get_animal(id)
     if not animal:
         return jsonify(message='Not found'), 404
     if request.method == 'GET':
-        return jsonify(animal.to_dict(long=True))
+        return jsonify(animal)
     if request.method == 'DELETE':
-        db.session.delete(animal)
-        db.session.commit()
+        dao.AnimalsDAO.delete_animal(id)
         user_id = get_jwt_identity()
-        log_request(request.method, request.url, user_id, 'animal', animal.id)
+        log_request(request.method, request.url, user_id, 'animal', id)
         return jsonify({'id': id})
     data = request.get_json()
-    for key, value in data.items():
-        setattr(animal, key, value)
-    db.session.commit()
+    animal.update(data)
+    dao.AnimalsDAO.update_animal(animal)
     user_id = get_jwt_identity()
-    log_request(request.method, request.url, user_id, 'animal', animal.id)
-    return jsonify(animal.to_dict(long=True))
+    log_request(request.method, request.url, user_id, 'animal', id)
+    return jsonify(animal)
 
 
-@app.route('/centers', methods=['GET'])
+@bp.route('/centers', methods=['GET'])
 def centers_list():
     """
     Function that view all animal centers.
     :return: Short information about centers (id and login).
     """
-    return jsonify([center.to_dict() for center in models.AnimalCenter.query.all()])
+    return jsonify(dao.AnimalCentersDAO.get_centers())
 
 
-@app.route('/centers/<int:id>', methods=['GET'])
+@bp.route('/centers/<int:id>', methods=['GET'])
 def center_inform(id):
     """
     Function that show detailed information about animal center.
     :param id: id of center that user would like to see.
     :return: Dictionary that contain detailed information about center.
     """
-    center = models.AnimalCenter.query.get(id)
+    center = dao.AnimalCentersDAO.get_center_inform(id)
     if not center:
         return jsonify(message='Not found'), 404
-    return jsonify(center.to_dict(long=True))
+    return jsonify(center)
 
 
-@app.route('/species', methods=['GET', 'POST'])
+@bp.route('/species', methods=['GET', 'POST'])
 @utils.jwt_required_for_change
 @utils.json_validate_for_change(schemas.specie_schema)
 def species():
@@ -156,7 +151,7 @@ def species():
         return jsonify(specie.to_dict()), 201
 
 
-@app.route('/species/<int:id>', methods=['GET'])
+@bp.route('/species/<int:id>', methods=['GET'])
 def specie_inform(id):
     """
     Function that show detailed information about species.
@@ -170,7 +165,7 @@ def specie_inform(id):
     return jsonify(species.to_dict(), [animal.to_dict() for animal in animals])
 
 
-@app.route('/register', methods=['POST'])
+@bp.route('/register', methods=['POST'])
 @utils.json_validate_for_change(schemas.register_schema)
 def registration():
     """

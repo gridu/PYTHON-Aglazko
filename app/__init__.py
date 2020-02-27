@@ -1,19 +1,13 @@
-# import logging
-from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from config import Config
 from flask_jwt_extended import JWTManager
 import logging
 
-app = Flask(__name__)
-app.config.from_object(Config)
+db = SQLAlchemy()
 
-db = SQLAlchemy(app)
+migrate = Migrate()
 
-migrate = Migrate(app, db)
-
-jwt = JWTManager(app)
+jwt = JWTManager()
 
 FORMAT = '%(asctime)s %(message)s'
 fh = logging.FileHandler('app.log')
@@ -24,4 +18,4 @@ logger.addHandler(fh)
 logger.setLevel(logging.INFO)
 
 
-from app import routes, models
+
