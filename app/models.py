@@ -23,33 +23,27 @@ class AnimalCenter(db.Model):
     def set_password(self, password):
         """
         Function that creates password hash.
-        Parameters:
-            password (string): Password that set user.
-        Return:
-            None
+        :param password: Password that set user.
+        :return : None
         """
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         """
         The function that check user password when he/she is trying to authorize.
-        Parameters:
-            password (string): Password that set user.
-        Returns:
-            True: If password is correct.
-            False: If password is incorrect.
+        :param password: Password that set user.
+        :return True: If password is correct.
+        :return False: If password is incorrect.
         """
         return check_password_hash(self.password_hash, password)
 
     def to_dict(self, long=False):
         """
         Function that create dictionary from object.
-        Parameters:
-            long (bool): Value of this param define which version of data will be returned. If value True function will
-                         return long version of dictionary with such keys: id, login, address. Otherwise dictionary wil
-                         not contain kye address.
-        Returns:
-            data: Dictionary with information about object.
+        :param long: Value of this param define which version of data will be returned. If value True function will
+                     return long version of dictionary with such keys: id, login, address. Otherwise dictionary wil
+                     not contain kye address.
+        :return data: Dictionary with information about object.
         """
         data = {'id': self.id,
                 'login': self.login}
@@ -75,8 +69,7 @@ class AccessRequest(db.Model):
     def to_dict(self):
         """
         Function that create dictionary from object.
-        Returns:
-            Dictionary with information about object.
+        :return: Dictionary with information about object.
         """
         return {'id': self.id,
                 'center_id': self.center_id,
@@ -108,12 +101,10 @@ class Animal(db.Model):
     def to_dict(self, long=False):
         """
         Function that create dictionary from object.
-        Parameters:
-            long (bool): Value of this param define which version of data will be returned. If value True function will
-                         return long version of dictionary with such keys: id, name, center_id, description, age,
-                         species_id, price. Otherwise dictionary wil contain only id and name.
-        Returns:
-            data: Dictionary with information about object.
+        :param long: Value of this param define which version of data will be returned. If value True function will
+                     return long version of dictionary with such keys: id, name, center_id, description, age,
+                     species_id, price. Otherwise dictionary wil contain only id and name.
+        :return data: Dictionary with information about object.
         """
         data = {'id': self.id,
                 'name': self.name}
@@ -146,11 +137,9 @@ class Species(db.Model):
     def to_dict(self):
         """
         Function that create dictionary from object.
-        Returns:
-            Dictionary with information about object.
+        :return: Dictionary with information about object.
         """
         return {'id': self.id,
                 'name': self.name,
                 'description': self.description,
                 'price': self.price}
-

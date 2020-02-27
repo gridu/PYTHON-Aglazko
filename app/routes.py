@@ -11,7 +11,7 @@ def log_request(method, request_url, center_id, entity_type, entity_id):
     :param request_url: request url.
     :param center_id: id of user that send request.
     :param entity_type: type of entity that user add or change.
-    :param entity_id:
+    :param entity_id: id of entity that we add/delete/modify.
     :return:
     """
     logger.info('method %s - request_url %s - center_id %s - entity_type %s - entity_id %s', method, request_url, center_id,
@@ -25,6 +25,11 @@ def index():
 
 @app.route('/login', methods=['GET'])
 def login():
+    """
+    Function for authorization.
+    :return:If password incorrect function will return "Incorrect password".
+            if password was correct function will return access token.
+    """
     user_login = request.args.get('login')
     user_password = request.args.get('password')
     if not user_login or not user_password:
@@ -48,7 +53,8 @@ def login():
 @utils.json_validate_for_change(schemas.animal_schema)
 def animals():
     if request.method == 'GET':
-        animals = [animal.to_dict() for animal in models.Animal.query.all()]
+        # animals = db.engine.execute('SELECT * from animals')
+        # animals = [animal.to_dict() for animal in db.engine.execute('SELECT * from animals')]
         return jsonify(animals)
     else:
         data = request.get_json()
@@ -61,13 +67,6 @@ def animals():
         db.session.add(animal)
         db.session.commit()
         log_request(request.method, request.url, user_id, 'animal', animal.id)
-        # logger = logging.getLogger("")
-        # f_handler = logging.FileHandler('app.log')
-        # f_handler.setLevel(logging.INFO)
-        # f_format = logging.Formatter('%(asctime)s - %(message)s')
-        # f_handler.setFormatter(f_format)
-        # logger.addHandler(f_handler)
-        # logger.info('method %s request_url %s center_id %s entity_type %s entity_id %s', request.method, request.url, user_id, 'animal', animal.id)
         return jsonify(animal.to_dict()), 201
 
 
@@ -75,34 +74,50 @@ def animals():
 @utils.jwt_required_for_change
 @utils.json_validate_for_change(schemas.animal_update_schema)
 def animal_inform(id):
-        animal = models.Animal.query.get(id)
-        if not animal:
-            return jsonify(message='Not found'), 404
-        if request.method == 'GET':
-            return jsonify(animal.to_dict(long=True))
-        if request.method == 'DELETE':
-            db.session.delete(animal)
-            db.session.commit()
-            user_id = get_jwt_identity()
-            log_request(request.method, request.url, user_id, 'animal', animal.id)
-            return jsonify({'id': id})
-        data = request.get_json()
-        for key, value in data.items():
-            setattr(animal, key, value)
+    """
+    Function that view detailed information about one animal
+    :param id: id of animal that we would like to see.
+    :return: If there is no animal with such id, function will return "Not found", 404.
+             If request method GET function will return detailed information about animal.
+             If request method DELETE function will return id of animal that was deleted.
+             If request method PUT function will change param that give user and return detailed information about animal.
+    """
+    animal = models.Animal.query.get(id)
+    if not animal:
+        return jsonify(message='Not found'), 404
+    if request.method == 'GET':
+        return jsonify(animal.to_dict(long=True))
+    if request.method == 'DELETE':
+        db.session.delete(animal)
         db.session.commit()
         user_id = get_jwt_identity()
         log_request(request.method, request.url, user_id, 'animal', animal.id)
-        return jsonify(animal.to_dict(long=True))
+        return jsonify({'id': id})
+    data = request.get_json()
+    for key, value in data.items():
+        setattr(animal, key, value)
+    db.session.commit()
+    user_id = get_jwt_identity()
+    log_request(request.method, request.url, user_id, 'animal', animal.id)
+    return jsonify(animal.to_dict(long=True))
 
 
 @app.route('/centers', methods=['GET'])
 def centers_list():
-    # centers = models.AnimalCenter.query.all()
+    """
+    Function that view all animal centers.
+    :return: Short information about centers (id and login).
+    """
     return jsonify([center.to_dict() for center in models.AnimalCenter.query.all()])
 
 
 @app.route('/centers/<int:id>', methods=['GET'])
 def center_inform(id):
+    """
+    Function that show detailed information about animal center.
+    :param id: id of center that user would like to see.
+    :return: Dictionary that contain detailed information about center.
+    """
     center = models.AnimalCenter.query.get(id)
     if not center:
         return jsonify(message='Not found'), 404
@@ -113,6 +128,13 @@ def center_inform(id):
 @utils.jwt_required_for_change
 @utils.json_validate_for_change(schemas.specie_schema)
 def species():
+    """
+    Function that show list of species and count of animals that have this species.
+    Also function can add new species.
+    :return: If method GET, function will return list of dictionaries that contain species name and count of animals,
+             that have these species.
+             If method POST,function will return detailed information about species.
+    """
     if request.method == 'GET':
         result = db.session.query(
             models.Species.name, db.func.count(models.Animal.name))\
@@ -136,6 +158,11 @@ def species():
 
 @app.route('/species/<int:id>', methods=['GET'])
 def specie_inform(id):
+    """
+    Function that show detailed information about species.
+    :param id: Id of species that user would like to see.
+    :return: Information about species and list of animals of this specie.
+    """
     species = models.Species.query.get(id)
     animals = models.Animal.query.filter_by(species_id=id).all()
     if not species:
@@ -146,6 +173,11 @@ def specie_inform(id):
 @app.route('/register', methods=['POST'])
 @utils.json_validate_for_change(schemas.register_schema)
 def registration():
+    """
+    Function that register user.
+    :return: If user name is already taken function will return "This user name is already taken".
+             If registration was successfully function will return "Successfully registered" and access token.
+    """
     data = request.get_json()
     if models.AnimalCenter.query.filter_by(login=data['login']).first():
         return jsonify(message="This user name is already taken"), 400

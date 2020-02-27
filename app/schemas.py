@@ -1,3 +1,4 @@
+"""This module contain schemas for each kind of objects that used in project."""
 specie_schema = {
     'type': 'object',
     'properties': {
