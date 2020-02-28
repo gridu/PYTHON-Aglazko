@@ -103,7 +103,8 @@ def centers_list():
     Function that view all animal centers.
     :return: Short information about centers (id and login).
     """
-    return jsonify(dao.AnimalCentersDAO.get_centers())
+    # return jsonify([center.deserialize() for center in models.AnimalCenter.query.all()])
+    return jsonify(dao.AnimalCentersDAO().get_centers())
 
 
 @bp.route('/centers/<int:id>', methods=['GET'])
@@ -131,13 +132,13 @@ def species():
              If method POST,function will return detailed information about species.
     """
     if request.method == 'GET':
-        result = db.session.query(
-            models.Species.name, db.func.count(models.Animal.name))\
-            .join(models.Animal, models.Species.id == models.Animal.species_id)\
-            .group_by(models.Species.id).all()
-        result = [{'species_name': name, 'count_of_animals': count}
-                  for name, count in result]
-        return jsonify(result)
+        # result = db.session.query(
+        #     models.Species.name, db.func.count(models.Animal.name))\
+        #     .join(models.Animal, models.Species.id == models.Animal.species_id)\
+        #     .group_by(models.Species.id).all()
+        # result = [{'species_name': name, 'count_of_animals': count}
+        #           for name, count in result]
+        return jsonify(dao.SpeciesDAO.get_species())
     else:
         data = request.get_json()
         if models.Species.query.filter_by(name=data['name']).first():

@@ -12,7 +12,7 @@ jwt = JWTManager()
 FORMAT = '%(asctime)s %(message)s'
 fh = logging.FileHandler('app.log')
 fh.setFormatter(logging.Formatter(FORMAT))
-logging.basicConfig(format=FORMAT)
+# logging.basicConfig(format=FORMAT)
 logger = logging.getLogger(__name__)
 logger.addHandler(fh)
 logger.setLevel(logging.INFO)

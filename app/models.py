@@ -2,9 +2,10 @@
 from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from app.interfaces import IAnimalCenter
 
 
-class AnimalCenter(db.Model):
+class AnimalCenter(db.Model, IAnimalCenter):
     """
     This is a class for creating animalcenter table in database.
     It contains detailed information about each animal center.
@@ -37,7 +38,7 @@ class AnimalCenter(db.Model):
         """
         return check_password_hash(self.password_hash, password)
 
-    def to_dict(self, long=False):
+    def deserialize(self, record=None, long=False):
         """
         Function that create dictionary from object.
         :param long: Value of this param define which version of data will be returned. If value True function will

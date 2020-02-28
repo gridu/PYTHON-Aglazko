@@ -1,11 +1,12 @@
 from app import db
 from copy import copy
 from werkzeug.security import check_password_hash
+from app.interfaces import IAnimalCenter
 
 
-class AnimalsDAO:
-    @staticmethod
-    def _deserialize(record, long=False):
+class AnimalsDAO(IAnimalCenter):
+    # @staticmethod
+    def _deserialize(self, record=None, long=False):
         data = {
             'id': record[0],
             'name': record[2]
@@ -46,31 +47,31 @@ class AnimalsDAO:
                 update_string, animal_id))
 
 
-class AnimalCentersDAO:
-    @staticmethod
-    def _deserialize(record, long=False):
+class AnimalCentersDAO(IAnimalCenter):
+    # @staticmethod
+    def deserialize(self, record=None, long=False):
         data = {'id': record.id,
                 'login': record.login}
         if long:
             data.update({'address': record.address})
         return data
 
-    @staticmethod
-    def get_centers():
+    # @staticmethod
+    def get_centers(self):
         records = db.engine.execute("SELECT * FROM animal_center;")
-        return [AnimalCentersDAO._deserialize(record) for record in records]
+        return [AnimalCentersDAO().deserialize(record, long=False) for record in records]
 
     @staticmethod
     def get_center_inform(id):
         record = db.engine.execute(
             "SELECT * FROM animal_center WHERE id ={};".format(id)).first()
-        return AnimalCentersDAO._deserialize(record, long=True) if record else None
+        return AnimalCentersDAO.deserialize(record, long=True) if record else None
 
     @staticmethod
     def get_center_by_login(login):
         record = db.engine.execute(
             "SELECT * FROM animal_center WHERE login='{}';".format(login)).first()
-        return AnimalCentersDAO._deserialize(record, long=True) if record else None
+        return AnimalCentersDAO.deserialize(record, long=True) if record else None
 
     @staticmethod
     def check_password(user_id, password):
@@ -85,3 +86,28 @@ class AccessRequestDAO:
     def create_access_request(center_id):
         db.engine.execute(
             "INSERT INTO access_request (center_id) VALUES ({});".format(center_id))
+
+
+class SpeciesDAO:
+    @staticmethod
+    def _deserialize(record, long=False):
+        data = {'species_name': record[0],
+                'count_of_animals': record[1]}
+        if long:
+            data = {'id': record[0],
+                'name': record[1],
+                'description': record[2],
+                'price': record[3]}
+        return data
+
+    @staticmethod
+    def get_species():
+        records = db.engine.execute("SELECT species.name, count(animal.name) FROM species "
+                                   "LEFT OUTER JOIN animal ON species.id = animal.species_id "
+                                   "GROUP BY species.name")
+        return [SpeciesDAO._deserialize(record) for record in records]
+
+    @staticmethod
+    def get_species_inform(id):
+        record = db.engine.execute("SELECT * FROM species WHERE id = {};". format(id)).first()
+        return SpeciesDAO._deserialize(record, long=True)
