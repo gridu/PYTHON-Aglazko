@@ -53,6 +53,14 @@ class AnimalCenter(db.Model, IAnimalCenter):
             data.update({'address': self.address})
         return data
 
+    def get_centers(self):
+        # records = []
+        return [AnimalCenter.deserialize(record, long=False) for record in AnimalCenter().query.all()]
+
+    def get_center_inform(self, id):
+        record = AnimalCenter().query.get(id)
+        return AnimalCenter.deserialize(record, long=True) if record else None
+
 
 class AccessRequest(db.Model):
     """

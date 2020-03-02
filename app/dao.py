@@ -61,17 +61,17 @@ class AnimalCentersDAO(IAnimalCenter):
         records = db.engine.execute("SELECT * FROM animal_center;")
         return [AnimalCentersDAO().deserialize(record, long=False) for record in records]
 
-    @staticmethod
-    def get_center_inform(id):
+    # @staticmethod
+    def get_center_inform(self, id):
         record = db.engine.execute(
-            "SELECT * FROM animal_center WHERE id ={};".format(id)).first()
-        return AnimalCentersDAO.deserialize(record, long=True) if record else None
+            "SELECT * FROM animal_center WHERE id={};".format(id)).first()
+        return AnimalCentersDAO().deserialize(record, long=True) if record else None
 
     @staticmethod
     def get_center_by_login(login):
         record = db.engine.execute(
             "SELECT * FROM animal_center WHERE login='{}';".format(login)).first()
-        return AnimalCentersDAO.deserialize(record, long=True) if record else None
+        return AnimalCentersDAO().deserialize(record, long=True) if record else None
 
     @staticmethod
     def check_password(user_id, password):

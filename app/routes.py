@@ -36,7 +36,7 @@ def login():
     user_password = request.args.get('password')
     if not user_login or not user_password:
         return jsonify(message="Login and password are required"), 400
-    user = dao.AnimalCentersDAO.get_center_by_login(user_login)
+    user = dao.AnimalCentersDAO().get_center_by_login(user_login)
     if not user:
         return jsonify(message="No user with such login"), 400
     dao.AccessRequestDAO.create_access_request(user['id'])
@@ -103,8 +103,8 @@ def centers_list():
     Function that view all animal centers.
     :return: Short information about centers (id and login).
     """
-    # return jsonify([center.deserialize() for center in models.AnimalCenter.query.all()])
-    return jsonify(dao.AnimalCentersDAO().get_centers())
+    # return jsonify(dao.AnimalCentersDAO().get_centers())
+    return jsonify(models.AnimalCenter().get_centers())
 
 
 @bp.route('/centers/<int:id>', methods=['GET'])
@@ -114,7 +114,8 @@ def center_inform(id):
     :param id: id of center that user would like to see.
     :return: Dictionary that contain detailed information about center.
     """
-    center = dao.AnimalCentersDAO.get_center_inform(id)
+    center = dao.AnimalCentersDAO().get_center_inform(id)
+    # center = models.AnimalCenter().get_center_inform(id)
     if not center:
         return jsonify(message='Not found'), 404
     return jsonify(center)
