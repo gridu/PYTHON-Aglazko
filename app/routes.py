@@ -36,14 +36,18 @@ def login():
     user_password = request.args.get('password')
     if not user_login or not user_password:
         return jsonify(message="Login and password are required"), 400
-    user = dao.AnimalCentersDAO().get_center_by_login(user_login)
+    # user = dao.AnimalCentersDAO().get_center_by_login(user_login)
+    user = models.AnimalCenter().get_center_by_login(user_login)
     if not user:
         return jsonify(message="No user with such login"), 400
-    dao.AccessRequestDAO.create_access_request(user['id'])
 
-    if not dao.AnimalCentersDAO.check_password(user['id'], user_password):
+    # check = dao.AnimalCentersDAO().check_password(user_password, user['id'])
+    check = user.check_password(user_password, user.id)
+    if not check:
         return jsonify(message="Incorrect password"), 400
-    access_token = create_access_token(identity=user['id'])
+    # dao.AccessRequestDAO().create_access_request(user['id'])
+    models.AccessRequest().create_access_request(user.id)
+    access_token = create_access_token(identity=user.id)
     return jsonify({'access_token': access_token})
 
 
@@ -52,19 +56,17 @@ def login():
 @utils.json_validate_for_change(schemas.animal_schema)
 def animals():
     if request.method == 'GET':
-        return jsonify(dao.AnimalsDAO.get_animals())
+        return jsonify(dao.AnimalsDAO().get_animals())
+        # return jsonify(models.Animal().get_animals())
     else:
         data = request.get_json()
         user_id = get_jwt_identity()
         if not models.Species.query.get(data['species_id']):
             return jsonify(message="No such specie"), 400
-        animal = models.Animal(name=data['name'], center_id=user_id,
-                               description=data['description'], price=data['price'],
-                               species_id=data['species_id'], age=data['age'])
-        db.session.add(animal)
-        db.session.commit()
-        log_request(request.method, request.url, user_id, 'animal', animal.id)
-        return jsonify(animal.to_dict()), 201
+        animal = models.Animal().add_animal(data, user_id)
+        # animal = dao.AnimalsDAO().add_animal(data, user_id)
+        log_request(request.method, request.url, user_id, 'animal', animal['id'])
+        return jsonify(animal), 201
 
 
 @bp.route('/animals/<int:id>', methods=['GET', 'PUT', 'DELETE'])
@@ -79,19 +81,22 @@ def animal_inform(id):
              If request method DELETE function will return id of animal that was deleted.
              If request method PUT function will change param that give user and return detailed information about animal.
     """
-    animal = dao.AnimalsDAO.get_animal(id)
+    animal = dao.AnimalsDAO().get_animal(id)
+    # animal = models.Animal().get_animal(id)
     if not animal:
         return jsonify(message='Not found'), 404
     if request.method == 'GET':
         return jsonify(animal)
     if request.method == 'DELETE':
-        dao.AnimalsDAO.delete_animal(id)
+        # dao.AnimalsDAO().delete_animal(id)
+        models.Animal().delete_animal(id)
         user_id = get_jwt_identity()
         log_request(request.method, request.url, user_id, 'animal', id)
         return jsonify({'id': id})
     data = request.get_json()
     animal.update(data)
-    dao.AnimalsDAO.update_animal(animal)
+    # dao.AnimalsDAO().update_animal(animal)
+    models.Animal().update_animal(data_upd=data, animal_id=id)
     user_id = get_jwt_identity()
     log_request(request.method, request.url, user_id, 'animal', id)
     return jsonify(animal)
@@ -133,13 +138,8 @@ def species():
              If method POST,function will return detailed information about species.
     """
     if request.method == 'GET':
-        # result = db.session.query(
-        #     models.Species.name, db.func.count(models.Animal.name))\
-        #     .join(models.Animal, models.Species.id == models.Animal.species_id)\
-        #     .group_by(models.Species.id).all()
-        # result = [{'species_name': name, 'count_of_animals': count}
-        #           for name, count in result]
-        return jsonify(dao.SpeciesDAO.get_species())
+        return jsonify(dao.SpeciesDAO().get_species())
+        # return jsonify(models.Species().get_species())
     else:
         data = request.get_json()
         if models.Species.query.filter_by(name=data['name']).first():
@@ -160,11 +160,14 @@ def specie_inform(id):
     :param id: Id of species that user would like to see.
     :return: Information about species and list of animals of this specie.
     """
-    species = models.Species.query.get(id)
-    animals = models.Animal.query.filter_by(species_id=id).all()
-    if not species:
+    # species = models.Species().query.get(id)
+    # animals = models.Animal().query.filter_by(species_id=id).all()
+    # result = dao.SpeciesDAO().get_species_inform(id)
+    result = models.Species().get_species_inform(id)
+    if not result:
         return jsonify('Not found'), 404
-    return jsonify(species.to_dict(), [animal.to_dict() for animal in animals])
+    # return jsonify(models.Species().deserialize(species), [animal.to_dict() for animal in animals])
+    return jsonify(result)
 
 
 @bp.route('/register', methods=['POST'])
@@ -182,9 +185,8 @@ def registration():
     center.set_password(data['password'])
     db.session.add(center)
     db.session.commit()
-    access_request = models.AccessRequest(center_id=center.id)
-    db.session.add(access_request)
-    db.session.commit()
+    dao.AccessRequestDAO().create_access_request(center.id)
+    # models.AccessRequest().create_access_request(center.id)
 
     log_request(request.method, request.url, center.id, 'animal_center', center.id)
 

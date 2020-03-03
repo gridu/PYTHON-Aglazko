@@ -2,7 +2,7 @@
 from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.interfaces import IAnimalCenter
+from app.interfaces import IAnimalCenter, IAccessRequest, ISpecies, IAnimal
 
 
 class AnimalCenter(db.Model, IAnimalCenter):
@@ -29,7 +29,7 @@ class AnimalCenter(db.Model, IAnimalCenter):
         """
         self.password_hash = generate_password_hash(password)
 
-    def check_password(self, password):
+    def check_password(self, password, user_id=None):
         """
         The function that check user password when he/she is trying to authorize.
         :param password: Password that set user.
@@ -61,8 +61,12 @@ class AnimalCenter(db.Model, IAnimalCenter):
         record = AnimalCenter().query.get(id)
         return AnimalCenter.deserialize(record, long=True) if record else None
 
+    def get_center_by_login(self, user_login):
+        # record = AnimalCenter().query.filter_by(login=user_login).first()
+        return AnimalCenter().query.filter_by(login=user_login).first()
 
-class AccessRequest(db.Model):
+
+class AccessRequest(db.Model, IAccessRequest):
     """
     Class for creating accessrequest table in db.
     In db will saved history of all successful requests.
@@ -84,8 +88,13 @@ class AccessRequest(db.Model):
                 'center_id': self.center_id,
                 'timestamp': self.timestamp}
 
+    def create_access_request(self, user_id):
+        access_request = AccessRequest(center_id = user_id)
+        db.session.add(access_request)
+        db.session.commit()
 
-class Animal(db.Model):
+
+class Animal(db.Model, IAnimal):
     """
     Class for creating animal table in db.
     It contains detailed information about each animal.
@@ -107,7 +116,7 @@ class Animal(db.Model):
     species_id = db.Column(db.Integer, db.ForeignKey("species.id"))
     price = db.Column(db.Float, nullable=True)
 
-    def to_dict(self, long=False):
+    def deserialize(self, record=None, long=False):
         """
         Function that create dictionary from object.
         :param long: Value of this param define which version of data will be returned. If value True function will
@@ -127,8 +136,35 @@ class Animal(db.Model):
             })
         return data
 
+    def get_animals(self):
+        animals = [animal.deserialize() for animal in Animal().query.all()]
+        return animals
 
-class Species(db.Model):
+    def add_animal(self, data, userid):
+        animal = Animal(name=data['name'], center_id=userid,
+                               description=data['description'], price=data['price'],
+                               species_id=data['species_id'], age=data['age'])
+        db.session.add(animal)
+        db.session.commit()
+        return animal.deserialize(animal)
+
+    def get_animal(self, animal_id):
+        animal = Animal().query.get(animal_id)
+        return animal.deserialize(long=True)
+
+    def delete_animal(self, animal_id):
+        animal = Animal().query.get(animal_id)
+        db.session.delete(animal)
+        db.session.commit()
+
+    def update_animal(self, animal=None, data_upd=None, animal_id=None):
+        animal = Animal().query.get(animal_id)
+        for key, value in data_upd.items():
+            setattr(animal, key, value)
+        db.session.commit()
+
+
+class Species(db.Model, ISpecies):
     """
     Class for creating species table in db.
     Contains detailed information about species.
@@ -143,12 +179,30 @@ class Species(db.Model):
     description = db.Column(db.String(500), nullable=True)
     price = db.Column(db.Float, nullable=True)
 
-    def to_dict(self):
+    def deserialize(self, record=None, long=False):
         """
         Function that create dictionary from object.
         :return: Dictionary with information about object.
         """
-        return {'id': self.id,
-                'name': self.name,
-                'description': self.description,
-                'price': self.price}
+        if long:
+            data = {'id': self.id,
+                    'name': self.name,
+                    'description': self.description,
+                    'price': self.price}
+        return data
+
+    def get_species(self):
+        result = db.session.query(
+            Species.name, db.func.count(Animal.name)) \
+            .join(Animal, Species.id == Animal.species_id, isouter=True) \
+            .group_by(Species.id).all()
+        return [{'species_name': name, 'count_of_animals': count} for name, count in result]
+
+    def get_species_inform(self, id):
+        species = Species().query.get(id)
+        animals = Animal().query.filter_by(species_id=id).all()
+        if species:
+            return species.deserialize(long=True),[animal.deserialize(long=True) for animal in animals]
+        else:
+            return None
+
