@@ -73,7 +73,13 @@ class AnimalCentersDAO(IAnimalCenter):
     def get_center_inform(self, id):
         record = db.engine.execute(
             "SELECT * FROM animal_center WHERE id={};".format(id)).first()
-        return AnimalCentersDAO().deserialize(record, long=True) if record else None
+        animals = db.engine.execute(
+            "SELECT * FROM animal WHERE center_id={};".format(id)
+        )
+        if record:
+            return AnimalCentersDAO().deserialize(record, long=True), [AnimalsDAO().deserialize(animal) for animal in animals] if record else None
+        else:
+            return None
 
     # @staticmethod
     def get_center_by_login(self, user_login):
@@ -121,6 +127,13 @@ class SpeciesDAO(ISpecies):
         record = db.engine.execute("SELECT * FROM species WHERE id = {};". format(id)).first()
         animals = db.engine.execute("SELECT * FROM animal WHERE species_id = {};".format(id))
         if record:
-            return SpeciesDAO().deserialize(record, long=True),[AnimalsDAO().deserialize(animal, long=True) for animal in animals]
+            return SpeciesDAO().deserialize(record, long=True),[AnimalsDAO().deserialize(animal) for animal in animals]
         else:
             return None
+
+    def add_species(self, data):
+        db.engine.execute("INSERT INTO species (name, description, price) "
+                          "VALUES ('{}', '{}', {});".format(data['name'],
+                                                    data['description'], data['price']))
+        specie = db.engine.execute("SELECT * FROM species WHERE id = (SELECT MAX(id) FROM species);").first()
+        return SpeciesDAO().deserialize(specie, long=True)

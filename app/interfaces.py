@@ -21,10 +21,6 @@ class IAnimalCenter:
     def get_center_by_login(self, user_login):
         """Get center inform by login"""
 
-    @abstractmethod
-    def check_password(self, password, user_id=None):
-        """Function that check password"""
-
 
 class IAccessRequest:
     __metaclass__ = ABCMeta
@@ -37,17 +33,24 @@ class IAccessRequest:
 class ISpecies:
     __metaclass__ = ABCMeta
 
+    @staticmethod
     @abstractmethod
-    def deserialize(self, record=None, long=False):
+    def deserialize(record=None, long=False):
         """To create dictionary"""
 
+    @staticmethod
     @abstractmethod
-    def get_species(self):
+    def get_species():
         """Get all species"""
 
+    @staticmethod
     @abstractmethod
     def get_species_inform(self, id):
         """Get inform about species"""
+
+    @abstractmethod
+    def add_species(self, data):
+        """Add new specie."""
 
 
 class IAnimal:
@@ -72,3 +75,7 @@ class IAnimal:
     @abstractmethod
     def update_animal(self, animal=None, data_upd=None, animal_id=None):
         """Update animal"""
+
+    @abstractmethod
+    def add_animal(self, data, userid):
+        """Add animal."""

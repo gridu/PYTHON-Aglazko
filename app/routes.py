@@ -2,6 +2,7 @@
 from app import models, db, utils, schemas, logger, dao
 from flask import request, jsonify, Blueprint
 from flask_jwt_extended import create_access_token, get_jwt_identity
+from app.dao_models import AnimalCenterORM, AccessRequestORM, AnimalORM, SpeciesORM
 
 bp = Blueprint("app", __name__)
 
@@ -36,18 +37,19 @@ def login():
     user_password = request.args.get('password')
     if not user_login or not user_password:
         return jsonify(message="Login and password are required"), 400
-    # user = dao.AnimalCentersDAO().get_center_by_login(user_login)
-    user = models.AnimalCenter().get_center_by_login(user_login)
+    user = dao.AnimalCentersDAO().get_center_by_login(user_login)
+    # user = AnimalCenterORM().get_center_by_login(user_login)
     if not user:
         return jsonify(message="No user with such login"), 400
 
-    # check = dao.AnimalCentersDAO().check_password(user_password, user['id'])
-    check = user.check_password(user_password, user.id)
+    check = dao.AnimalCentersDAO().check_password(user_password, user['id'])
+    # check = user.check_password(user_password, user.id)
     if not check:
         return jsonify(message="Incorrect password"), 400
-    # dao.AccessRequestDAO().create_access_request(user['id'])
-    models.AccessRequest().create_access_request(user.id)
-    access_token = create_access_token(identity=user.id)
+    dao.AccessRequestDAO().create_access_request(user['id'])
+    # AccessRequestORM().create_access_request(user.id)
+    # access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=user['id'])
     return jsonify({'access_token': access_token})
 
 
@@ -57,14 +59,14 @@ def login():
 def animals():
     if request.method == 'GET':
         return jsonify(dao.AnimalsDAO().get_animals())
-        # return jsonify(models.Animal().get_animals())
+        # return jsonify(AnimalORM().get_animals())
     else:
         data = request.get_json()
         user_id = get_jwt_identity()
         if not models.Species.query.get(data['species_id']):
             return jsonify(message="No such specie"), 400
-        animal = models.Animal().add_animal(data, user_id)
-        # animal = dao.AnimalsDAO().add_animal(data, user_id)
+        # animal = AnimalORM().add_animal(data, user_id)
+        animal = dao.AnimalsDAO().add_animal(data, user_id)
         log_request(request.method, request.url, user_id, 'animal', animal['id'])
         return jsonify(animal), 201
 
@@ -82,21 +84,21 @@ def animal_inform(id):
              If request method PUT function will change param that give user and return detailed information about animal.
     """
     animal = dao.AnimalsDAO().get_animal(id)
-    # animal = models.Animal().get_animal(id)
+    # animal = AnimalORM().get_animal(id)
     if not animal:
         return jsonify(message='Not found'), 404
     if request.method == 'GET':
         return jsonify(animal)
     if request.method == 'DELETE':
-        # dao.AnimalsDAO().delete_animal(id)
-        models.Animal().delete_animal(id)
+        dao.AnimalsDAO().delete_animal(id)
+        # AnimalORM().delete_animal(id)
         user_id = get_jwt_identity()
         log_request(request.method, request.url, user_id, 'animal', id)
         return jsonify({'id': id})
     data = request.get_json()
     animal.update(data)
-    # dao.AnimalsDAO().update_animal(animal)
-    models.Animal().update_animal(data_upd=data, animal_id=id)
+    dao.AnimalsDAO().update_animal(animal)
+    # AnimalORM().update_animal(data_upd=data, animal_id=id)
     user_id = get_jwt_identity()
     log_request(request.method, request.url, user_id, 'animal', id)
     return jsonify(animal)
@@ -108,8 +110,8 @@ def centers_list():
     Function that view all animal centers.
     :return: Short information about centers (id and login).
     """
-    # return jsonify(dao.AnimalCentersDAO().get_centers())
-    return jsonify(models.AnimalCenter().get_centers())
+    return jsonify(dao.AnimalCentersDAO().get_centers())
+    # return jsonify(AnimalCenterORM().get_centers())
 
 
 @bp.route('/centers/<int:id>', methods=['GET'])
@@ -120,7 +122,7 @@ def center_inform(id):
     :return: Dictionary that contain detailed information about center.
     """
     center = dao.AnimalCentersDAO().get_center_inform(id)
-    # center = models.AnimalCenter().get_center_inform(id)
+    # center = AnimalCenterORM().get_center_inform(id)
     if not center:
         return jsonify(message='Not found'), 404
     return jsonify(center)
@@ -139,18 +141,16 @@ def species():
     """
     if request.method == 'GET':
         return jsonify(dao.SpeciesDAO().get_species())
-        # return jsonify(models.Species().get_species())
+        # return jsonify(SpeciesORM().get_species())
     else:
         data = request.get_json()
         if models.Species.query.filter_by(name=data['name']).first():
             return jsonify(message="This species is already taken"), 400
-        specie = models.Species(name=data['name'], description=data['description'],
-                                price=data['price'])
-        db.session.add(specie)
-        db.session.commit()
+        specie = dao.SpeciesDAO().add_species(data)
+        # specie = SpeciesORM().add_species(data)
         user_id = get_jwt_identity()
-        log_request(request.method, request.url, user_id, 'species', specie.id)
-        return jsonify(specie.to_dict()), 201
+        log_request(request.method, request.url, user_id, 'species', specie['id'])
+        return jsonify(specie), 201
 
 
 @bp.route('/species/<int:id>', methods=['GET'])
@@ -160,13 +160,10 @@ def specie_inform(id):
     :param id: Id of species that user would like to see.
     :return: Information about species and list of animals of this specie.
     """
-    # species = models.Species().query.get(id)
-    # animals = models.Animal().query.filter_by(species_id=id).all()
-    # result = dao.SpeciesDAO().get_species_inform(id)
-    result = models.Species().get_species_inform(id)
+    result = dao.SpeciesDAO().get_species_inform(id)
+    # result = SpeciesORM().get_species_inform(id)
     if not result:
         return jsonify('Not found'), 404
-    # return jsonify(models.Species().deserialize(species), [animal.to_dict() for animal in animals])
     return jsonify(result)
 
 
@@ -186,7 +183,7 @@ def registration():
     db.session.add(center)
     db.session.commit()
     dao.AccessRequestDAO().create_access_request(center.id)
-    # models.AccessRequest().create_access_request(center.id)
+    # AccessRequestORM().create_access_request(center.id)
 
     log_request(request.method, request.url, center.id, 'animal_center', center.id)
 
