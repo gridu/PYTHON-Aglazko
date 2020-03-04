@@ -1,3 +1,5 @@
+"""Classes to retrieve data from database via SQL"""
+
 from app import db
 from copy import copy
 from werkzeug.security import check_password_hash

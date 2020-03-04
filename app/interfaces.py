@@ -1,3 +1,5 @@
+"""Interfaces that define behaviour for retrieving data from database"""
+
 from abc import ABCMeta, abstractmethod
 
 

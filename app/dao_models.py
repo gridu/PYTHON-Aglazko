@@ -1,8 +1,9 @@
+"""Classes to retrieve data from database via ORM"""
+
 from app.models import AnimalCenter, Animal, AccessRequest, Species
 from app.interfaces import IAccessRequest, IAnimalCenter, IAnimal, ISpecies
-from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
-from _collections import OrderedDict
+from werkzeug.security import check_password_hash
 
 
 class AnimalCenterORM(IAnimalCenter):
@@ -21,17 +22,22 @@ class AnimalCenterORM(IAnimalCenter):
             data.update({'address': record.address})
         return data
 
+    def check_password(self, password, user_id):
+        record=AnimalCenter.query.get(user_id)
+        return check_password_hash(record.password_hash, password)
+
     def get_centers(self):
-        return [AnimalCenterORM().deserialize(record, long=False) for record in AnimalCenter().query.all()]
+        return [self.deserialize(record, long=False) for record in AnimalCenter.query.all()]
 
     def get_center_inform(self, id):
-        record = AnimalCenter().query.get(id)
+        record = AnimalCenter.query.get(id)
+        animal_orm = AnimalORM()
         if record:
-            return AnimalCenterORM().deserialize(record, long=True), [AnimalORM().deserialize(animal) for animal in record.animals]
+            return self.deserialize(record, long=True), [animal_orm.deserialize(animal) for animal in record.animals]
         return None
 
     def get_center_by_login(self, user_login):
-        return AnimalCenter().query.filter_by(login=user_login).first()
+        return AnimalCenter.query.filter_by(login=user_login).first()
 
 
 class AccessRequestORM(IAccessRequest):
@@ -65,7 +71,7 @@ class AnimalORM(IAnimal):
         return data
 
     def get_animals(self):
-        animals = [AnimalORM().deserialize(animal) for animal in Animal().query.all()]
+        animals = [self.deserialize(animal) for animal in Animal.query.all()]
         return animals
 
     def add_animal(self, data, userid):
@@ -74,19 +80,19 @@ class AnimalORM(IAnimal):
                                species_id=data['species_id'], age=data['age'])
         db.session.add(animal)
         db.session.commit()
-        return AnimalORM().deserialize(animal)
+        return self.deserialize(animal)
 
     def get_animal(self, animal_id):
-        animal = Animal().query.get(animal_id)
-        return AnimalORM().deserialize(animal, long=True) if animal else None
+        animal = Animal.query.get(animal_id)
+        return self.deserialize(animal, long=True) if animal else None
 
     def delete_animal(self, animal_id):
-        animal = Animal().query.get(animal_id)
+        animal = Animal.query.get(animal_id)
         db.session.delete(animal)
         db.session.commit()
 
     def update_animal(self, animal=None, data_upd=None, animal_id=None):
-        animal = Animal().query.get(animal_id)
+        animal = Animal.query.get(animal_id)
         for key, value in data_upd.items():
             setattr(animal, key, value)
         db.session.commit()
@@ -115,9 +121,10 @@ class SpeciesORM(ISpecies):
 
     def get_species_inform(self, id):
         species = Species().query.get(id)
-        animals = Animal().query.filter_by(species_id=id).all()
+        animals = Animal.query.filter_by(species_id=id).all()
+        animal_orm = AnimalORM()
         if species:
-            return SpeciesORM().deserialize(species, long=True),[AnimalORM().deserialize(animal) for animal in animals]
+            return self.deserialize(species, long=True),[animal_orm.deserialize(animal) for animal in animals]
         else:
             return None
 
@@ -126,4 +133,4 @@ class SpeciesORM(ISpecies):
                                 price=data['price'])
         db.session.add(specie)
         db.session.commit()
-        return SpeciesORM().deserialize(specie, long=True)
+        return self.deserialize(specie, long=True)

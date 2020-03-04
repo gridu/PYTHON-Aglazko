@@ -1,3 +1,5 @@
+"""Fill database with predefined values"""
+
 from app.main import create_app
 from app.models import AnimalCenter
 

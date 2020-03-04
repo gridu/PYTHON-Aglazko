@@ -1,4 +1,4 @@
-"""This module contain schemas for each kind of objects that used in project."""
+"""Schemas for each endpoint with json body from routes.py"""
 specie_schema = {
     'type': 'object',
     'properties': {

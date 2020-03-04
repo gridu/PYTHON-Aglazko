@@ -1,3 +1,5 @@
+"""Factory method for building flask application"""
+
 from flask import Flask
 from config import Config
 from app import db, migrate, jwt
