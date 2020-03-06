@@ -94,3 +94,5 @@ Now you can perform requests like:
 - `httpie GET localhost:5000/login?login=<your_login>&password=<your_password>`
 - `httpie POST localhost:5000/register login=<your_login> password=<your_password> address=<your_address>`
 - `httpie POST localhost:5000/animals name=<animal_name> age:=<age> species_id:=<sp_id>`
+
+[Screenshot of tests](test_screenshot.png)

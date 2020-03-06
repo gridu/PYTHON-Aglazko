@@ -3,7 +3,7 @@
 from flask import Flask
 from config import Config
 from app import db, migrate, jwt
-from app.routes import bp as routes_bp
+from app.routes.routes import bp as routes_bp
 
 
 def create_app():

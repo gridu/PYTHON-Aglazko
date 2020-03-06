@@ -3,13 +3,16 @@
 from abc import ABCMeta, abstractmethod
 
 
-class IAnimalCenter:
+class IDaoDeserializer:
     __metaclass__ = ABCMeta
 
-    # @staticmethod
     @abstractmethod
     def deserialize(self, record=None, long=False):
         """Create dict from object"""
+
+
+class IDaoAnimalCenter(IDaoDeserializer):
+    __metaclass__ = ABCMeta
 
     @abstractmethod
     def get_centers(self):
@@ -24,7 +27,7 @@ class IAnimalCenter:
         """Get center inform by login"""
 
 
-class IAccessRequest:
+class IDaoAccessRequest:
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -32,20 +35,14 @@ class IAccessRequest:
         """Create access request"""
 
 
-class ISpecies:
+class IDaoSpecies(IDaoDeserializer):
     __metaclass__ = ABCMeta
 
-    @staticmethod
-    @abstractmethod
-    def deserialize(record=None, long=False):
-        """To create dictionary"""
 
-    @staticmethod
     @abstractmethod
-    def get_species():
+    def get_species(self):
         """Get all species"""
 
-    @staticmethod
     @abstractmethod
     def get_species_inform(self, id):
         """Get inform about species"""
@@ -55,12 +52,8 @@ class ISpecies:
         """Add new specie."""
 
 
-class IAnimal:
+class IDaoAnimal(IDaoDeserializer):
     __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def deserialize(self, record=None, long=False):
-        """To create dictionary"""
 
     @abstractmethod
     def get_animals(self):

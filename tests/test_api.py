@@ -10,8 +10,8 @@ def test_login(client, mocker):
     get_center_mock.return_value = {'id': 2}
     check_password = mocker.patch("app.dao_models.AnimalCenterORM.check_password")
     check_password.return_value = True
-    mocker.patch("app.dao.AccessRequestDAO.create_access_request")
-    check_password_mock = mocker.patch("app.dao.AnimalCentersDAO.check_password")
+    mocker.patch("app.dao.AccessRequestDaoSql.create_access_request")
+    check_password_mock = mocker.patch("app.dao.AnimalCentersDaoSql.check_password")
     check_password_mock.return_value = True
     credentials = {'login': 'anna', 'password': 'abc'}
     response = client.get('/login?{}'.format(urlencode(credentials)))

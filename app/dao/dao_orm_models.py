@@ -1,12 +1,12 @@
 """Classes to retrieve data from database via ORM"""
 
-from app.models import AnimalCenter, Animal, AccessRequest, Species
-from app.interfaces import IAccessRequest, IAnimalCenter, IAnimal, ISpecies
+from app.models.models import AnimalCenter, Animal, AccessRequest, Species
+from app.dao.interfaces import IDaoAccessRequest, IDaoAnimalCenter, IDaoAnimal, IDaoSpecies, IDaoDeserializer
 from app import db
 from werkzeug.security import check_password_hash
 
 
-class AnimalCenterORM(IAnimalCenter):
+class AnimalCenterORM(IDaoAnimalCenter, IDaoDeserializer):
 
     def deserialize(self, record=None, long=False):
         """
@@ -40,7 +40,7 @@ class AnimalCenterORM(IAnimalCenter):
         return AnimalCenter.query.filter_by(login=user_login).first()
 
 
-class AccessRequestORM(IAccessRequest):
+class AccessRequestORM(IDaoAccessRequest):
 
     def create_access_request(self, user_id):
         access_request = AccessRequest(center_id=user_id)
@@ -48,7 +48,7 @@ class AccessRequestORM(IAccessRequest):
         db.session.commit()
 
 
-class AnimalORM(IAnimal):
+class AnimalORM(IDaoAnimal, IDaoDeserializer):
 
     def deserialize(self, record=None, long=False):
         """
@@ -98,7 +98,7 @@ class AnimalORM(IAnimal):
         db.session.commit()
 
 
-class SpeciesORM(ISpecies):
+class SpeciesORM(IDaoSpecies, IDaoDeserializer):
 
     def deserialize(self, record=None, long=False):
         """

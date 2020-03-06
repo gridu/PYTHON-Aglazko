@@ -3,10 +3,9 @@
 from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.interfaces import IAnimalCenter, IAccessRequest, ISpecies, IAnimal
 
 
-class AnimalCenter(db.Model, IAnimalCenter):
+class AnimalCenter(db.Model):
     """
     This is a class for creating animalcenter table in database.
     It contains detailed information about each animal center.
@@ -40,7 +39,7 @@ class AnimalCenter(db.Model, IAnimalCenter):
         return check_password_hash(self.password_hash, password)
 
 
-class AccessRequest(db.Model, IAccessRequest):
+class AccessRequest(db.Model):
     """
     Class for creating accessrequest table in db.
     In db will saved history of all successful requests.
@@ -54,7 +53,7 @@ class AccessRequest(db.Model, IAccessRequest):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-class Animal(db.Model, IAnimal):
+class Animal(db.Model):
     """
     Class for creating animal table in db.
     It contains detailed information about each animal.
@@ -77,7 +76,7 @@ class Animal(db.Model, IAnimal):
     price = db.Column(db.Float, nullable=True)
 
 
-class Species(db.Model, ISpecies):
+class Species(db.Model):
     """
     Class for creating species table in db.
     Contains detailed information about species.

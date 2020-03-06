@@ -1,7 +1,7 @@
 """Fill database with predefined values"""
 
 from app.main import create_app
-from app.models import AnimalCenter
+from app.models.models import AnimalCenter
 
 app = create_app()
 
