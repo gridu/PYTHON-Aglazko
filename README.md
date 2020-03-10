@@ -4,25 +4,24 @@ This application is REST API for animal sales web site.
 #### Project Structure
 ```
 ├── app
-│   ├── dao_models.py
-│   ├── dao.py
+│   ├── config.py
+│   ├── dao
 │   ├── __init__.py
-│   ├── interfaces.py
 │   ├── main.py
-│   ├── models.py
-│   ├── routes.py
-│   ├── schemas.py
-│   └── utils.py
+│   ├── models
+│   ├── routes
+│   └── utils
+│       ├── decorators.py
+│       ├── log.py
+│       └── schemas.py
 ├── app.db
 ├── app.log
 ├── config.ini
-├── config.py
 ├── fill_db.py
 ├── README.md
 ├── requirements.txt
 ├── tests
 │   ├── conftest.py
-│   ├── __init__.py
 │   └── test_api.py
 ├── useful_scripts
 │   ├── init_venv.sh
@@ -30,21 +29,20 @@ This application is REST API for animal sales web site.
 │   ├── run_app.sh
 │   └── run_tests.sh
 └── wsgi.py
+
 ```
 - `app` - main application folder, where source code lives
-- `dao_models.py` - dao classes which uses orm
-- `dao.py` - dao classes which uses plain SQL
+- `dao` - dao interfaces and classes
 - `__init__.py` - flask plugins and logging initialization 
-- `interfaces.py` - dao interfaces
 - `main.py` - factory method that builds applications
-- `models.py` - orm models
-- `routes.py` - functions that are registered as endpoints
+- `config.py` - application configuration object
+- `models` - database orm models
+- `routes` - functions that are registered as endpoints
 - `schemas.py` - json validation schemas
-- `utils.py` - useful decorators
+- `decorators.py` - useful decorators
 - `app.db` - application database
 - `app.log` - application log
 - `config.ini` - configuration file
-- `config.py` - application configuration object
 - `fill_db.py` - script that fills db with default values
 - `README.md` - some useful information
 - `requirements.txt` - project dependencies
@@ -73,7 +71,7 @@ with default values
 3. Run `.useful_scripts/run_app.sh` to run application
 
 #### Run tests
-1. Run first step from [Run application](#run-application)
+1. Run first and second steps from [Run application](#run-application)
 2. Run `./useful_scripts/run_tests.sh`
 
 #### Make requests to application
@@ -84,9 +82,9 @@ with default values
 4. Run `pip install httpie httpie-jwt-auth`
 
 ##### Make requests
-First, `httpie` virtualenv should be sourced. \
+First, `httpi` virtualenv should be sourced. \
 httpie uses `=` for string values, and `:=` for int, number etc\
-`--auth-type=jwt` and `auth=$TOKEN`shoud be used with all `POST`, `PUT` and `DELETE` requests.\
+`--auth-type=jwt` and `--auth=$TOKEN`shoud be used with all `POST`, `PUT` and `DELETE` requests.\
 Token can be obtained via `httpie GET localhost:5000/login?login=<your_login>&password=<your_password>`
 and then can be saved as `export TOKEN=<access_token>` \
 Now you can perform requests like:

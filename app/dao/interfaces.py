@@ -26,6 +26,10 @@ class IDaoAnimalCenter(IDaoDeserializer):
     def get_center_by_login(self, user_login):
         """Get center inform by login"""
 
+    @abstractmethod
+    def add_center(self, data):
+        """Create new animal center"""
+
 
 class IDaoAccessRequest:
     __metaclass__ = ABCMeta
@@ -38,7 +42,6 @@ class IDaoAccessRequest:
 class IDaoSpecies(IDaoDeserializer):
     __metaclass__ = ABCMeta
 
-
     @abstractmethod
     def get_species(self):
         """Get all species"""
@@ -50,6 +53,10 @@ class IDaoSpecies(IDaoDeserializer):
     @abstractmethod
     def add_species(self, data):
         """Add new specie."""
+
+    @abstractmethod
+    def get_species_by_name(self, name):
+        """Get species by name"""
 
 
 class IDaoAnimal(IDaoDeserializer):
@@ -68,7 +75,7 @@ class IDaoAnimal(IDaoDeserializer):
         """Delete animal"""
 
     @abstractmethod
-    def update_animal(self, animal=None, data_upd=None, animal_id=None):
+    def update_animal(self, animal):
         """Update animal"""
 
     @abstractmethod

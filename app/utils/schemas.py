@@ -30,7 +30,7 @@ animal_schema = {
         'species_id': {'type': 'integer'},
         'price': {'type': 'number'}
     },
-    'required': ['name', 'age', 'species_id']
+    'required': ['name', 'age', 'species_id', 'description', 'price']
 }
 
 animal_update_schema = {
@@ -42,5 +42,6 @@ animal_update_schema = {
         'species_id': {'type': 'integer'},
         'price': {'type': 'number'}
     },
+    'additionalProperties': False,
     'required': []
 }

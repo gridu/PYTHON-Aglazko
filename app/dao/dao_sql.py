@@ -2,7 +2,7 @@
 
 from app import db
 from copy import copy
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from app.dao.interfaces import IDaoAnimalCenter, IDaoAccessRequest, IDaoSpecies, IDaoAnimal
 from datetime import datetime
 
@@ -29,25 +29,32 @@ class AnimalsDaoSql(IDaoAnimal):
 
     def get_animal(self, animal_id):
         record = db.engine.execute(
-            "SELECT * FROM animal WHERE id={}".format(animal_id)).first()
+            "SELECT * FROM animal WHERE id=:id", {"id":animal_id}).first()
         return AnimalsDaoSql().deserialize(record, long=True) if record else None
 
     def delete_animal(self, animal_id):
-        db.engine.execute("DELETE FROM animal WHERE id={}".format(animal_id))
+        db.engine.execute("DELETE FROM animal WHERE id=:id", {'id': animal_id})
 
-    def update_animal(self, animal=None, data_upd=None, animal_id=None):
+    def update_animal(self, animal):
         animal = copy(animal)
         animal_id = animal.pop('id')
+
         update_string = ','.join(
-            ["{}='{}'".format(key, value) for key, value in animal.items()])
+            ["{key}=:{key}".format(key=key) for key in animal.keys()])
+
+        animal['id'] = animal_id
+
         db.engine.execute(
-            "UPDATE animal SET {} WHERE id={}".format(
-                update_string, animal_id))
+            "UPDATE animal SET {} WHERE id=:id".format(update_string), animal)
 
     def add_animal(self, data, userid):
+        values = {'name': data['name'], 'center_id': userid,
+                  'description':data['description'], 'price': data['price'],
+                  'species_id': data['species_id'], 'age': data['age']}
+
         db.engine.execute("INSERT INTO animal (name, center_id, description, price, species_id, age) "
-                          "VALUES ('{}', {}, '{}', {}, {}, {});".format(data['name'], userid, data['description'],
-                                                                        data['price'], data['species_id'], data['age']))
+                          "VALUES (:name, :center_id, :description, :price, :species_id, :age);",
+                          values)
         animal = db.engine.execute("SELECT * FROM animal WHERE id = (SELECT MAX(id) FROM animal);").first()
         return AnimalsDaoSql().deserialize(animal)
 
@@ -66,31 +73,42 @@ class AnimalCentersDaoSql(IDaoAnimalCenter):
 
     def get_center_inform(self, id):
         record = db.engine.execute(
-            "SELECT * FROM animal_center WHERE id={};".format(id)).first()
+            "SELECT * FROM animal_center WHERE id=:id;",{'id': id}).first()
         animals = db.engine.execute(
-            "SELECT * FROM animal WHERE center_id={};".format(id)
+            "SELECT * FROM animal WHERE center_id=:id;", {'id': id}
         )
         if record:
-            return AnimalCentersDaoSql().deserialize(record, long=True), [AnimalsDaoSql().deserialize(animal) for animal in animals] if record else None
+            return AnimalCentersDaoSql().deserialize(record, long=True), \
+                   [AnimalsDaoSql().deserialize(animal) for animal in animals] if record else None
         else:
             return None
 
     def get_center_by_login(self, user_login):
         record = db.engine.execute(
-            "SELECT * FROM animal_center WHERE login='{}';".format(user_login)).first()
+            "SELECT * FROM animal_center WHERE login=:login;",
+            {'login': user_login}).first()
         return AnimalCentersDaoSql().deserialize(record, long=True) if record else None
 
     def check_password(self, password, user_id=None):
         record = db.engine.execute(
             "SELECT password_hash FROM animal_center "
-            "WHERE id ={};".format(user_id)).first()
+            "WHERE id =:id;", {'id': user_id}).first()
         return check_password_hash(record.password_hash, password)
+
+    def add_center(self, data):
+        password = data.pop('password')
+        data['password_hash'] = generate_password_hash(password)
+        db.engine.execute(
+            "INSERT INTO animal_center (login, password_hash, address) "
+            "VALUES (:login, :password_hash, :address);", data)
+        return db.engine.execute("SELECT MAX(id) FROM animal_center;").first()[0]
 
 
 class AccessRequestDaoSql(IDaoAccessRequest):
     def create_access_request(self, user_id):
         db.engine.execute(
-            "INSERT INTO access_request (center_id, timestamp) VALUES ({}, '{}');".format(user_id, datetime.now()))
+            "INSERT INTO access_request (center_id, timestamp) VALUES (:id, :timestamp);",
+            {'id': user_id, 'timestamp': datetime.now()})
 
 
 class SpeciesDaoSql(IDaoSpecies):
@@ -111,16 +129,26 @@ class SpeciesDaoSql(IDaoSpecies):
         return [SpeciesDaoSql().deserialize(record) for record in records]
 
     def get_species_inform(self, id):
-        record = db.engine.execute("SELECT * FROM species WHERE id = {};". format(id)).first()
-        animals = db.engine.execute("SELECT * FROM animal WHERE species_id = {};".format(id))
+        record = db.engine.execute("SELECT * FROM species WHERE id = :id;", {'id': id}).first()
+        animals = db.engine.execute("SELECT * FROM animal WHERE species_id = :id;", {'id': id})
         if record:
-            return SpeciesDaoSql().deserialize(record, long=True), [AnimalsDaoSql().deserialize(animal) for animal in animals]
+            return SpeciesDaoSql().deserialize(record, long=True),\
+                   [AnimalsDaoSql().deserialize(animal) for animal in animals]
         else:
             return None
 
     def add_species(self, data):
+        values = {'name': data['name'],  'description': data['description'],
+                  'price': data['price']}
         db.engine.execute("INSERT INTO species (name, description, price) "
-                          "VALUES ('{}', '{}', {});".format(data['name'],
-                                                    data['description'], data['price']))
+                          "VALUES (:name, :description, :price);", values)
         specie = db.engine.execute("SELECT * FROM species WHERE id = (SELECT MAX(id) FROM species);").first()
         return SpeciesDaoSql().deserialize(specie, long=True)
+
+    def get_species_by_name(self, name):
+        species = db.engine.execute(
+            "SELECT * FROM species WHERE name = :name;", {'name': name}).first()
+        if species:
+            return self.deserialize(species)
+        else:
+            return None

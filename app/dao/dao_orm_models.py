@@ -1,8 +1,10 @@
 """Classes to retrieve data from database via ORM"""
 
+from copy import copy
 from app.models.models import AnimalCenter, Animal, AccessRequest, Species
 from app.dao.interfaces import IDaoAccessRequest, IDaoAnimalCenter, IDaoAnimal, IDaoSpecies, IDaoDeserializer
 from app import db
+from . import dao
 from werkzeug.security import check_password_hash
 
 
@@ -23,7 +25,7 @@ class AnimalCenterORM(IDaoAnimalCenter, IDaoDeserializer):
         return data
 
     def check_password(self, password, user_id):
-        record=AnimalCenter.query.get(user_id)
+        record = AnimalCenter.query.get(user_id)
         return check_password_hash(record.password_hash, password)
 
     def get_centers(self):
@@ -31,13 +33,24 @@ class AnimalCenterORM(IDaoAnimalCenter, IDaoDeserializer):
 
     def get_center_inform(self, id):
         record = AnimalCenter.query.get(id)
-        animal_orm = AnimalORM()
         if record:
-            return self.deserialize(record, long=True), [animal_orm.deserialize(animal) for animal in record.animals]
+            return self.deserialize(record, long=True), \
+                   [dao.AnimalDAO.deserialize(animal) for animal in record.animals]
         return None
 
     def get_center_by_login(self, user_login):
-        return AnimalCenter.query.filter_by(login=user_login).first()
+        center = AnimalCenter.query.filter_by(login=user_login).first()
+        if center:
+            return self.deserialize(center)
+        else:
+            return None
+
+    def add_center(self, data):
+        center = AnimalCenter(login=data['login'], address=data['address'])
+        center.set_password(data['password'])
+        db.session.add(center)
+        db.session.commit()
+        return center.id
 
 
 class AccessRequestORM(IDaoAccessRequest):
@@ -76,8 +89,8 @@ class AnimalORM(IDaoAnimal, IDaoDeserializer):
 
     def add_animal(self, data, userid):
         animal = Animal(name=data['name'], center_id=userid,
-                               description=data['description'], price=data['price'],
-                               species_id=data['species_id'], age=data['age'])
+                        description=data['description'], price=data['price'],
+                        species_id=data['species_id'], age=data['age'])
         db.session.add(animal)
         db.session.commit()
         return self.deserialize(animal)
@@ -91,10 +104,12 @@ class AnimalORM(IDaoAnimal, IDaoDeserializer):
         db.session.delete(animal)
         db.session.commit()
 
-    def update_animal(self, animal=None, data_upd=None, animal_id=None):
-        animal = Animal.query.get(animal_id)
-        for key, value in data_upd.items():
-            setattr(animal, key, value)
+    def update_animal(self, animal):
+        animal = copy(animal)
+        animal_id = animal.pop('id')
+        animal_obj = Animal.query.get(animal_id)
+        for key, value in animal.items():
+            setattr(animal_obj, key, value)
         db.session.commit()
 
 
@@ -105,11 +120,10 @@ class SpeciesORM(IDaoSpecies, IDaoDeserializer):
         Function that create dictionary from object.
         :return: Dictionary with information about object.
         """
-        if long:
-            data = {'id': record.id,
-                    'name': record.name,
-                    'description': record.description,
-                    'price': record.price}
+        data = {'id': record.id,
+                'name': record.name,
+                'description': record.description,
+                'price': record.price}
         return data
 
     def get_species(self):
@@ -122,15 +136,23 @@ class SpeciesORM(IDaoSpecies, IDaoDeserializer):
     def get_species_inform(self, id):
         species = Species().query.get(id)
         animals = Animal.query.filter_by(species_id=id).all()
-        animal_orm = AnimalORM()
+
         if species:
-            return self.deserialize(species, long=True),[animal_orm.deserialize(animal) for animal in animals]
+            return self.deserialize(species, long=True),\
+                   [dao.AnimalDAO.deserialize(animal) for animal in animals]
         else:
             return None
 
     def add_species(self, data):
         specie = Species(name=data['name'], description=data['description'],
-                                price=data['price'])
+                         price=data['price'])
         db.session.add(specie)
         db.session.commit()
         return self.deserialize(specie, long=True)
+
+    def get_species_by_name(self, name):
+        species = Species.query.filter_by(name=name).first()
+        if species:
+            return self.deserialize(species)
+        else:
+            return None
