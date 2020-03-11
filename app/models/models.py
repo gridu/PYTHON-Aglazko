@@ -43,10 +43,9 @@ class AccessRequest(db.Model):
     """
     Class for creating accessrequest table in db.
     In db will saved history of all successful requests.
-    Parameters:
-        id (int): Id of access request, auto-generated, primary key.
-        center_id: Id of user that had access request.
-        timestamp: Time when was request.
+    :param id : Id of access request, auto-generated, primary key.
+    :param center_id: Id of user that had access request.
+    :param timestamp: Time when was request.
     """
     id = db.Column(db.Integer, primary_key=True)
     center_id = db.Column(db.Integer, db.ForeignKey("animal_center.id"))
@@ -57,14 +56,13 @@ class Animal(db.Model):
     """
     Class for creating animal table in db.
     It contains detailed information about each animal.
-    Parameters:
-        id (int): Id of animal, auto-generated, primary key.
-        center_id (int): Animal owner id, foreign key.
-        name (string): Animal name.
-        description (string): Description of animal.
-        age (int): Animal age.
-        species_id (int): Species id to which belongs animal.
-        price (float): Animal price.
+    :param id (int): Id of animal, auto-generated, primary key.
+    :param center_id (int): Animal owner id, foreign key.
+    :param name (string): Animal name.
+    :param description (string): Description of animal.
+    :param age (int): Animal age.
+    :param species_id (int): Species id to which belongs animal.
+    :param price (float): Animal price.
 
     """
     id = db.Column(db.Integer, primary_key=True)
@@ -80,11 +78,10 @@ class Species(db.Model):
     """
     Class for creating species table in db.
     Contains detailed information about species.
-    Parameters:
-        id (int): Species id.
-        name (string): Species name.
-        description (string): Description of species.
-        price (float): Species price.
+    :param id (int): Species id.
+    :param name (string): Species name.
+    :param description (string): Description of species.
+    :param price (float): Species price.
     """
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(40))
