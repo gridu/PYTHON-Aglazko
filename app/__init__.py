@@ -18,6 +18,3 @@ fh.setFormatter(logging.Formatter(FORMAT))
 logger = logging.getLogger(__name__)
 logger.addHandler(fh)
 logger.setLevel(logging.INFO)
-
-
-

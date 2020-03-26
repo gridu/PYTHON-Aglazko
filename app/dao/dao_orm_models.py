@@ -34,8 +34,8 @@ class AnimalCenterORM(IDaoAnimalCenter, IDaoDeserializer):
     def get_center_inform(self, id):
         record = AnimalCenter.query.get(id)
         if record:
-            return self.deserialize(record, long=True), \
-                   [dao.AnimalDAO.deserialize(animal) for animal in record.animals]
+            return (self.deserialize(record, long=True),
+                    [dao.AnimalDAO.deserialize(animal) for animal in record.animals])
         return None
 
     def get_center_by_login(self, user_login):
@@ -138,8 +138,8 @@ class SpeciesORM(IDaoSpecies, IDaoDeserializer):
         animals = Animal.query.filter_by(species_id=id).all()
 
         if species:
-            return self.deserialize(species, long=True),\
-                   [dao.AnimalDAO.deserialize(animal) for animal in animals]
+            return (self.deserialize(species, long=True),
+                    [dao.AnimalDAO.deserialize(animal) for animal in animals])
         else:
             return None
 

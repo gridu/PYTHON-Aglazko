@@ -12,4 +12,3 @@ else:
     AnimalCenterDAO = dao_orm_models.AnimalCenterORM()
     AccessRequestDAO = dao_orm_models.AccessRequestORM()
     AnimalDAO = dao_orm_models.AnimalORM()
-

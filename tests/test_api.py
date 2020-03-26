@@ -61,30 +61,30 @@ def test_get_animals(client, mocker):
 def test_get_species_info(client, mocker):
     """This test check that species info returns as it should be"""
     expected = [
-    {
-        "description": "good cat",
-        "id": 1,
-        "name": "cat",
-        "price": 160.0
-    },
-    [
         {
+            "description": "good cat",
             "id": 1,
-            "name": "toto"
+            "name": "cat",
+            "price": 160.0
         },
-        {
-            "id": 2,
-            "name": "momo"
-        },
-        {
-            "id": 4,
-            "name": "jojo"
-        },
-        {
-            "id": 5,
-            "name": "1"
-        }
-    ]
+        [
+            {
+                "id": 1,
+                "name": "toto"
+            },
+            {
+                "id": 2,
+                "name": "momo"
+            },
+            {
+                "id": 4,
+                "name": "jojo"
+            },
+            {
+                "id": 5,
+                "name": "1"
+            }
+        ]
     ]
     mock = mocker.patch("app.dao.dao.SpeciesDAO.get_species_inform")
     mock.return_value = expected

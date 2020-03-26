@@ -52,7 +52,7 @@ class IDaoSpecies(IDaoDeserializer):
 
     @abstractmethod
     def add_species(self, data):
-        """Add new specie."""
+        """Add new species."""
 
     @abstractmethod
     def get_species_by_name(self, name):

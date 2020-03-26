@@ -1,5 +1,5 @@
 """Schemas for each endpoint with json body from routes.py"""
-specie_schema = {
+species_schema = {
     'type': 'object',
     'properties': {
         'id': {'type': 'integer'},

@@ -29,7 +29,7 @@ class AnimalsDaoSql(IDaoAnimal):
 
     def get_animal(self, animal_id):
         record = db.engine.execute(
-            "SELECT * FROM animal WHERE id=:id", {"id":animal_id}).first()
+            "SELECT * FROM animal WHERE id=:id", {"id": animal_id}).first()
         return AnimalsDaoSql().deserialize(record, long=True) if record else None
 
     def delete_animal(self, animal_id):
@@ -49,7 +49,7 @@ class AnimalsDaoSql(IDaoAnimal):
 
     def add_animal(self, data, userid):
         values = {'name': data['name'], 'center_id': userid,
-                  'description':data['description'], 'price': data['price'],
+                  'description': data['description'], 'price': data['price'],
                   'species_id': data['species_id'], 'age': data['age']}
 
         db.engine.execute("INSERT INTO animal (name, center_id, description, price, species_id, age) "
@@ -73,13 +73,13 @@ class AnimalCentersDaoSql(IDaoAnimalCenter):
 
     def get_center_inform(self, id):
         record = db.engine.execute(
-            "SELECT * FROM animal_center WHERE id=:id;",{'id': id}).first()
+            "SELECT * FROM animal_center WHERE id=:id;", {'id': id}).first()
         animals = db.engine.execute(
             "SELECT * FROM animal WHERE center_id=:id;", {'id': id}
         )
         if record:
-            return AnimalCentersDaoSql().deserialize(record, long=True), \
-                   [AnimalsDaoSql().deserialize(animal) for animal in animals] if record else None
+            return (AnimalCentersDaoSql().deserialize(record, long=True),
+                    [AnimalsDaoSql().deserialize(animal) for animal in animals] if record else None)
         else:
             return None
 
@@ -117,33 +117,33 @@ class SpeciesDaoSql(IDaoSpecies):
                 'count_of_animals': record[1]}
         if long:
             data = {'id': record[0],
-                'name': record[1],
-                'description': record[2],
-                'price': record[3]}
+                    'name': record[1],
+                    'description': record[2],
+                    'price': record[3]}
         return data
 
     def get_species(self):
         records = db.engine.execute("SELECT species.name, count(animal.name) FROM species "
-                                   "LEFT OUTER JOIN animal ON species.id = animal.species_id "
-                                   "GROUP BY species.name")
+                                    "LEFT OUTER JOIN animal ON species.id = animal.species_id "
+                                    "GROUP BY species.name")
         return [SpeciesDaoSql().deserialize(record) for record in records]
 
     def get_species_inform(self, id):
         record = db.engine.execute("SELECT * FROM species WHERE id = :id;", {'id': id}).first()
         animals = db.engine.execute("SELECT * FROM animal WHERE species_id = :id;", {'id': id})
         if record:
-            return SpeciesDaoSql().deserialize(record, long=True),\
-                   [AnimalsDaoSql().deserialize(animal) for animal in animals]
+            return (SpeciesDaoSql().deserialize(record, long=True),
+                    [AnimalsDaoSql().deserialize(animal) for animal in animals])
         else:
             return None
 
     def add_species(self, data):
-        values = {'name': data['name'],  'description': data['description'],
+        values = {'name': data['name'], 'description': data['description'],
                   'price': data['price']}
         db.engine.execute("INSERT INTO species (name, description, price) "
                           "VALUES (:name, :description, :price);", values)
-        specie = db.engine.execute("SELECT * FROM species WHERE id = (SELECT MAX(id) FROM species);").first()
-        return SpeciesDaoSql().deserialize(specie, long=True)
+        species = db.engine.execute("SELECT * FROM species WHERE id = (SELECT MAX(id) FROM species);").first()
+        return SpeciesDaoSql().deserialize(species, long=True)
 
     def get_species_by_name(self, name):
         species = db.engine.execute(

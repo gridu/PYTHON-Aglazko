@@ -51,40 +51,41 @@ def animals():
         data = request.get_json()
         user_id = get_jwt_identity()
         if not dao.SpeciesDAO.get_species_inform(data['species_id']):
-            return jsonify(message="No such specie"), 400
+            return jsonify(message="No such species"), 400
         animal = dao.AnimalDAO.add_animal(data, user_id)
         log.log_request(request.method, request.url, user_id, 'animal', animal['id'])
         return jsonify(animal), 201
 
 
-@bp.route('/animals/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+@bp.route('/animals/<int:animal_id>', methods=['GET', 'PUT', 'DELETE'])
 @decorators.jwt_required_for_change
 @decorators.json_validate_for_change(schemas.animal_update_schema)
-def animal_inform(id):
+def animal_inform(animal_id):
     """
     Function that view detailed information about one animal
     :param id: id of animal that we would like to see.
     :return: If there is no animal with such id, function will return "Not found", 404.
              If request method GET function will return detailed information about animal.
              If request method DELETE function will return id of animal that was deleted.
-             If request method PUT function will change param that give user and return detailed information about animal.
+             If request method PUT function will change param that give user and return
+                detailed information about animal.
     """
-    animal = dao.AnimalDAO.get_animal(id)
+    animal = dao.AnimalDAO.get_animal(animal_id)
     if not animal:
         return jsonify(message='Not found'), 404
     if request.method == 'GET':
         return jsonify(animal)
     if request.method == 'DELETE':
-        dao.AnimalDAO.delete_animal(id)
+        dao.AnimalDAO.delete_animal(animal_id)
         user_id = get_jwt_identity()
-        log.log_request(request.method, request.url, user_id, 'animal', id)
-        return jsonify({'id': id})
+        log.log_request(request.method, request.url, user_id, 'animal', animal_id)
+        return jsonify({'id': animal_id})
     if request.method == 'PUT':
         data = request.get_json()
         animal.update(data)
         dao.AnimalDAO.update_animal(animal)
         user_id = get_jwt_identity()
-        log.log_request(request.method, request.url, user_id, 'animal', id)
+        log.log_request(request.method, request.url, user_id, 'animal', animal_id)
         return jsonify(animal)
 
 
@@ -97,14 +98,14 @@ def centers_list():
     return jsonify(dao.AnimalCenterDAO.get_centers())
 
 
-@bp.route('/centers/<int:id>', methods=['GET'])
-def center_inform(id):
+@bp.route('/centers/<int:center_id>', methods=['GET'])
+def center_inform(center_id):
     """
     Function that show detailed information about animal center.
     :param id: id of center that user would like to see.
     :return: Dictionary that contain detailed information about center.
     """
-    center = dao.AnimalCenterDAO.get_center_inform(id)
+    center = dao.AnimalCenterDAO.get_center_inform(center_id)
     if not center:
         return jsonify({'message': 'Not found'}), 404
     return jsonify(center)
@@ -112,7 +113,7 @@ def center_inform(id):
 
 @bp.route('/species', methods=['GET', 'POST'])
 @decorators.jwt_required_for_change
-@decorators.json_validate_for_change(schemas.specie_schema)
+@decorators.json_validate_for_change(schemas.species_schema)
 def species():
     """
     Function that show list of species and count of animals that have this species.
@@ -127,22 +128,22 @@ def species():
         data = request.get_json()
         if dao.SpeciesDAO.get_species_by_name(data['name']):
             return jsonify(message="This species is already taken"), 400
-        specie = dao.SpeciesDAO.add_species(data)
+        species = dao.SpeciesDAO.add_species(data)
         user_id = get_jwt_identity()
-        log.log_request(request.method, request.url, user_id, 'species', specie['id'])
-        return jsonify(specie), 201
+        log.log_request(request.method, request.url, user_id, 'species', species['id'])
+        return jsonify(species), 201
 
 
-@bp.route('/species/<int:id>', methods=['GET'])
-def specie_inform(id):
+@bp.route('/species/<int:species_id>', methods=['GET'])
+def specie_inform(species_id):
     """
     Function that show detailed information about species.
     :param id: Id of species that user would like to see.
     :return: Information about species and list of animals of this specie.
     """
-    result = dao.SpeciesDAO.get_species_inform(id)
+    result = dao.SpeciesDAO.get_species_inform(species_id)
     if not result:
-        return jsonify({'message':'Not found'}), 404
+        return jsonify({'message': 'Not found'}), 404
     return jsonify(result)
 
 
